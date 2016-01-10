@@ -50,6 +50,8 @@
   SEDraggableLocation *draggableLocationTop = [[SEDraggableLocation alloc] initWithFrame:CGRectMake(locationXCoord, 10.0f, DRAGGABLE_LOCATION_WIDTH, DRAGGABLE_LOCATION_HEIGHT)];
   SEDraggableLocation *draggableLocationBottom = [[SEDraggableLocation alloc] initWithFrame:CGRectMake(locationXCoord, DRAGGABLE_LOCATION_HEIGHT + 30.0f, DRAGGABLE_LOCATION_WIDTH, DRAGGABLE_LOCATION_HEIGHT)];
   
+  draggableLocationBottom.enableOrdering = NO;
+    
   // you always want your SEDraggableLocations to be transparent -- otherwise, SEDraggable
   // objects will sometimes seem to hide behind certain locations while being dragged
   draggableLocationTop.backgroundColor = [UIColor clearColor];
@@ -118,12 +120,18 @@
   // set up the SEDraggables
   NSArray *pngs = [NSArray arrayWithObjects:@"crocodile", @"red-applo", @"bryn-applo", @"cat", @"dog", @"monkey", @"sheep", @"robo-fox", @"blue-applo", nil];
   
-  for (NSString *png in pngs) {
-    UIImage *draggableImage = UIImageWithBundlePNG(png);
-    UIImageView *draggableImageView = [[UIImageView alloc] initWithImage: draggableImage];
+    for (NSString *png in pngs) {
+        UIImage *draggableImage = UIImageWithBundlePNG(png);
+        UIImageView *draggableImageView = [[UIImageView alloc] initWithImage: draggableImage];
+        SEDraggable *draggable = [[SEDraggable alloc] initWithImageView: draggableImageView];
+        draggable.tag = [pngs indexOfObject:png];
+        [self configureDraggableObject: draggable];
+    }
+    
+    UIImageView *draggableImageView = [[UIImageView alloc] initWithImage:UIImageWithBundlePNG(@"cat")];
     SEDraggable *draggable = [[SEDraggable alloc] initWithImageView: draggableImageView];
+    draggable.tag = [pngs indexOfObject:@"cat"];
     [self configureDraggableObject: draggable];
-  }
 }
 
 

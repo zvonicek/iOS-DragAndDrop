@@ -110,6 +110,7 @@ const NSInteger SEDraggableLocationPositionDetermineAutomatically = -1;
   self.fillHorizontallyFirst = YES;
   self.allowRows = YES;
   self.allowColumns = YES;
+  self.enableOrdering = YES;
 }
 
 - (CGColorRef) highlightColor {
@@ -250,6 +251,7 @@ const NSInteger SEDraggableLocationPositionDetermineAutomatically = -1;
   }
   else {
     CGPoint p = [self calculateCenterOfDraggableObject:object inPosition:position];
+      
     return [self convertPoint:p toView:nil]; // return point in window coords
   }
 }
@@ -263,10 +265,15 @@ const NSInteger SEDraggableLocationPositionDetermineAutomatically = -1;
     srand(iseed);
     double max = RAND_MAX;
     double irand;
+      
+    NSDictionary<NSValue *, NSNumber *> *positions = [self itemsPositions];
+      
     double mult = myself.randomArrangementOffsetMultiplier;
     for (SEDraggable *object in myself.containedObjects) {
-      CGPoint centerInWindowCoords = [myself getAcceptableWindowCoordsForDraggableObject:object inPosition:index];
+      NSInteger position = [positions objectForKey:[NSValue valueWithNonretainedObject:object]].integerValue;
+      CGPoint centerInWindowCoords = [myself getAcceptableWindowCoordsForDraggableObject:object inPosition:position];
       CGPoint centerInLocalCoords = [myself convertPoint:centerInWindowCoords fromView:nil];
+        
       index++;
       irand = (double)rand();
       centerInLocalCoords.x += (CGFloat)((irand / max) * mult) - (mult / 2);
@@ -300,7 +307,26 @@ const NSInteger SEDraggableLocationPositionDetermineAutomatically = -1;
   return inside;
 }
 
-
+- (NSDictionary<NSValue *, NSNumber *> *)itemsPositions
+{
+    if (_enableOrdering) {
+        [self.containedObjects sortUsingComparator:^NSComparisonResult(UIView*  _Nonnull obj1, UIView*  _Nonnull obj2) {
+            return obj1.tag > obj2.tag;
+        }];
+    }
+    
+    NSMutableDictionary<NSValue *, NSNumber *> *dict = [[NSMutableDictionary alloc] init];
+    __block NSUInteger index = 0;
+    [self.containedObjects enumerateObjectsUsingBlock:^(SEDraggable * _Nonnull object, NSUInteger idx, BOOL * _Nonnull stop) {
+        dict[[NSValue valueWithNonretainedObject:object]] = @(index);
+        
+        if (!_enableOrdering || (idx+1 < self.containedObjects.count && object.tag != self.containedObjects[idx+1].tag)) {
+            index++;
+        }
+    }];
+    
+    return dict;
+}
 
 
 #pragma mark- Entry decision handlers
@@ -354,8 +380,10 @@ const NSInteger SEDraggableLocationPositionDetermineAutomatically = -1;
   // add the draggable to its new parent view
   [self addSubview:draggable];
 
+  NSDictionary<NSValue *, NSNumber *> *positions = [self itemsPositions];
+  NSInteger position = positions[[NSValue valueWithNonretainedObject:draggable]].integerValue;
   CGPoint destinationPointInWindowCoords = [self getAcceptableWindowCoordsForDraggableObject: draggable
-                                                                                  inPosition: SEDraggableLocationPositionDetermineAutomatically];
+                                                                                  inPosition: position];
 
   CGPoint destinationPointInLocalCoords = [self convertPoint:destinationPointInWindowCoords fromView:nil];
   
